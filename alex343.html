@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reproductor HD Rojo y Blanco Petateado Brillo - DonReseller</title>
+  <!-- jQuery necesario para la llamada $.getJSON / $.ajax -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background: radial-gradient(circle at 50% 40%, #3a0007, #0a0002);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    
+    /* Contenedor principal que envuelve parlantes y reproductor */
+    .player-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    /* ESTILOS DE LOS PARLANTES */
+    .speaker {
+      position: relative;
+      width: 100px;
+      height: 220px;
+      background: linear-gradient(135deg, #1f0005 0%, #0a0002 100%);
+      border: 3px solid #ff1a40;
+      border-radius: 12px;
+      box-shadow: 
+        0 0 15px rgba(255, 0, 43, 0.4),
+        inset 0 0 10px rgba(0, 0, 0, 0.9);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-around;
+      padding: 15px 0;
+      transition: transform 0.08s ease-out;
+    }
+
+    /* Tweeter (parlante pequeño) */
+    .speaker .tweeter {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #ffffff 10%, #660010 60%, #1a0004 100%);
+      border: 2px solid #ff3352;
+      box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+      transition: transform 0.08s ease-out;
+    }
+
+    /* Woofer (parlante grande) */
+    .speaker .woofer {
+      width: 75px;
+      height: 75px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #ffffff 15%, #b3001b 50%, #3a0007 85%, #000 100%);
+      border: 3px solid #ffffff;
+      box-shadow: 0 0 10px rgba(255, 0, 43, 0.8), inset 0 0 8px rgba(0,0,0,0.8);
+      position: relative;
+      transition: transform 0.08s ease-out;
+    }
+
+    .speaker .woofer::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #ffffff, #660010);
+      box-shadow: 0 0 4px rgba(255,255,255,0.9);
+    }
+
+    /* Efecto de pulso activo dinámico vía JS */
+    .speaker.beat {
+      box-shadow: 
+        0 0 25px rgba(255, 0, 43, 0.9),
+        0 0 10px rgba(255, 255, 255, 0.8),
+        inset 0 0 10px rgba(0, 0, 0, 0.9);
+    }
+
+    .player-container {
+      position: relative;
+    }
+    .player {
+      position: relative;
+      width: 374px;
+      height: 246px;
+      border-radius: 14px;
+      overflow: hidden;
+      color: #fff;
+      /* EFECTO PETATEADO / TRAMA CRUZADA BRILLANTE (Rojo y Blanco) */
+      background: 
+        radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 60%),
+        radial-gradient(ellipse at 50% 100%, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 50%),
+        linear-gradient(45deg, rgba(255, 255, 255, 0.4) 25%, transparent 25%, transparent 75%, rgba(255, 255, 255, 0.4) 75%),
+        linear-gradient(-45deg, rgba(255, 255, 255, 0.4) 25%, transparent 25%, transparent 75%, rgba(255, 255, 255, 0.4) 75%),
+        repeating-linear-gradient(0deg, rgba(255, 0, 43, 0.3) 0 2px, rgba(255, 255, 255, 0.3) 2px 4px),
+        linear-gradient(135deg, #ff1a40 0%, #b3001b 35%, #59000d 65%, #d90022 100%);
+      background-size: 100% 100%, 100% 100%, 8px 8px, 8px 8px, 100% 100%, 100% 100%;
+      border: 3px solid transparent;
+      background-clip: padding-box;
+      box-shadow: 
+        0 0 12px rgba(255, 255, 255, 0.8), 
+        0 0 20px rgba(255, 0, 51, 0.6), 
+        0 0 0 3px #ffffff, 
+        0 0 0 5px #b3001b, 
+        0 0 0 7px #2b0006, 
+        0 12px 30px rgba(0, 0, 0, 0.9), 
+        inset 0 2px 4px rgba(255, 255, 255, 0.9);
+    }
+    .topbar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 29px;
+      z-index: 1;
+      background: linear-gradient(#ffffff 0%, #ffccd2 40%, #ff1a3c 55%, #ffffff 100%);
+      border-bottom: 1px solid #59000d;
+      box-shadow: inset 0 1px 0 #fff;
+    }
+    .swoosh {
+      position: absolute;
+      left: 44px;
+      top: 0;
+      width: 150px;
+      height: 56px;
+      z-index: 1;
+      border-radius: 0 0 75px 75px / 0 0 56px 56px;
+      background: 
+        radial-gradient(circle at 50% 100%, rgba(255,255,255,0.6), transparent 70%),
+        linear-gradient(180deg, #b3001b 0%, #660010 40%, #260006 75%, #000000 100%);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8), inset 0 2px 2px rgba(255, 255, 255, 0.8);
+    }
+    .top {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 56px;
+      z-index: 2;
+    }
+    .menu {
+      position: absolute;
+      left: 8px;
+      top: 3px;
+      width: 23px;
+      height: 23px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      padding: 3px;
+      border-radius: 4px;
+      background: linear-gradient(#ffffff, #ffb3bd);
+      border: 1px solid #800013;
+      box-shadow: 0 0 5px rgba(255,255,255,0.8), inset 0 1px 0 #fff;
+    }
+    .menu i {
+      background: #800013;
+      border-radius: 50%;
+    }
+    .hd {
+      position: absolute;
+      left: 79px;
+      top: 19px;
+      width: 66px;
+      height: 27px;
+      border-radius: 50%;
+      background: linear-gradient(#ffffff 0%, #ffe6e8 48%, #ff002b 52%, #ffffff 100%);
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.9), 0 2px 4px rgba(0,0,0,0.8), inset 0 0 0 1px #800013;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font: italic 900 21px Arial Black, Arial;
+      color: #59000d;
+      letter-spacing: -1px;
+      text-shadow: 0 1px 0 #fff;
+    }
+    .site {
+      position: absolute;
+      right: 10px;
+      top: 6px;
+      font-size: 12.5px;
+      font-weight: bold;
+      color: #400009;
+      text-shadow: 0 1px 1px rgba(255, 255, 255, 0.9);
+    }
+    .live {
+      position: absolute;
+      right: 14px;
+      top: 38px;
+      font-size: 12px;
+      font-weight: bold;
+      z-index: 2;
+      color: #ffffff;
+      text-shadow: 0 0 6px #ff002b, 0 0 10px #ffffff, 0 1px 2px #000;
+    }
+    .artist-image-container {
+      position: absolute;
+      left: 17px;
+      top: 73px;
+      width: 74px;
+      height: 76px;
+      z-index: 2;
+      border: 2px solid #ffffff;
+      outline: 1px solid #800013;
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.7), 0 2px 4px rgba(0,0,0,0.8);
+      overflow: hidden;
+      background: #000;
+    }
+    .artist-image-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .num {
+      position: absolute;
+      left: 100px;
+      top: 76px;
+      font: italic 13px Arial;
+      z-index: 2;
+      color: #ffffff;
+      text-shadow: 0 0 4px #ff002b, 0 1px 2px #000;
+    }
+    canvas {
+      position: absolute;
+      left: 100px;
+      top: 68px;
+      z-index: 1;
+      border-radius: 3px;
+      box-shadow: inset 0 0 0 1px #800013, 0 0 6px rgba(255, 255, 255, 0.5);
+    }
+    .marquee {
+      position: absolute;
+      left: 20px;
+      right: 34px;
+      top: 150px;
+      height: 16px;
+      overflow: hidden;
+      z-index: 2;
+      font: 13px "Courier New", monospace;
+      letter-spacing: 1px;
+      white-space: nowrap;
+      color: #ffffff;
+      text-shadow: 0 0 6px #ff002b, 0 1px 2px #000;
+    }
+    .marquee span {
+      display: inline-block;
+      padding-left: 100%;
+      animation: mq 12s linear infinite;
+    }
+    @keyframes mq {
+      to { transform: translateX(-100%); }
+    }
+    .social {
+      position: absolute;
+      right: 0;
+      top: 73px;
+      width: 20px;
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .social a {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 3px 0 0 3px;
+      color: #800013;
+      font: bold 12px Arial;
+      text-decoration: none;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 2px #000;
+    }
+    .fb { background: linear-gradient(#ffffff, #ffccd2); }
+    .tw { background: linear-gradient(#ffffff, #ff8093); }
+    .ml { background: linear-gradient(#ffffff, #ff3352); }
+    .bottom {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 70px;
+      z-index: 2;
+      background: 
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.3) 0 1px, rgba(0, 0, 0, 0.1) 1px 2px), 
+        linear-gradient(#ffffff 0%, #ffccd2 48%, #ff1a3c 52%, #ffffff 100%);
+      border-radius: 60px 60px 0 0 / 22px 22px 0 0;
+      box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.6), inset 0 2px 1px #fff;
+    }
+    .btn {
+      position: absolute;
+      top: 30px;
+      width: 28px;
+      height: 22px;
+      border-radius: 5px;
+      border: 1px solid #66000e;
+      background: linear-gradient(#ffffff 0%, #ffb3bd 48%, #ff002b 52%, #ffffff 100%);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      box-shadow: 0 0 4px rgba(255, 255, 255, 0.8), 0 1px 2px rgba(0,0,0,0.5), inset 0 1px 0 #fff;
+    }
+    .btn:active {
+      transform: translateY(1px);
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.6);
+    }
+    .btn.pause { left: 25px; }
+    .btn.stop { left: 60px; }
+    .pause i {
+      width: 3px;
+      height: 10px;
+      background: #400009;
+    }
+    .stop i {
+      width: 10px;
+      height: 10px;
+      background: #400009;
+    }
+    .info {
+      position: absolute;
+      left: 115px;
+      top: 9px;
+      font-size: 9px;
+      line-height: 11px;
+      color: #3a0007;
+      font-weight: bold;
+    }
+    .info .r {
+      position: absolute;
+      left: 62px;
+      white-space: nowrap;
+    }
+    .time {
+      position: absolute;
+      left: 100px;
+      top: 46px;
+      font-size: 11px;
+      font-weight: bold;
+      color: #3a0007;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+    .knob {
+      position: absolute;
+      right: 30px;
+      top: 8px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      cursor: pointer;
+      background: conic-gradient(from 0deg, #ffffff, #ff002b, #ffffff, #800013, #ffffff, #ff002b, #ffffff, #800013, #ffffff);
+      border: 2px solid #59000d;
+      box-shadow: 0 0 8px rgba(255,255,255,0.6), 0 3px 6px rgba(0,0,0,0.6), inset 0 0 0 4px rgba(255,255,255,0.3);
+    }
+    .knob:after {
+      content: "";
+      position: absolute;
+      inset: 9px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 40% 30%, #ff1a3c, #2b0006);
+      box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.8);
+    }
+    .knob:before {
+      content: "";
+      position: absolute;
+      left: calc(50% - 1.5px);
+      top: 50%;
+      width: 3px;
+      height: 17px;
+      background: #ffffff;
+      box-shadow: 0 0 5px #ffffff;
+      border-radius: 2px;
+      z-index: 2;
+      transform-origin: 50% 0;
+      transform: rotate(var(--r, 200deg));
+    }
+    .vol {
+      position: absolute;
+      right: 12px;
+      top: 48px;
+      font-size: 10px;
+      color: #3a0007;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Contenedor general que integra parlantes + reproductor -->
+  <div class="player-wrapper">
+    
+    <!-- PARLANTE IZQUIERDO -->
+    <div class="speaker" id="speakerLeft">
+      <div class="tweeter"></div>
+      <div class="woofer"></div>
+    </div>
+
+    <!-- REPRODUCTOR -->
+    <div class="player-container">
+      <!-- Etiqueta de audio configurada -->
+      <audio id="audioRadio" crossorigin="anonymous">
+        <source src="https://usa14.fastcast4u.com/proxy/radiomelodias28?mp=/1" type="audio/mpeg">
+      </audio>
+
+      <div class="player">
+        <div class="topbar"></div>
+        <div class="swoosh"></div>
+        <div class="top">
+          <div class="menu"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="hd">HD</div>
+          <div class="site">hosnting-fe HD</div>
+        </div>
+        <div class="live">LIVE</div>
+        
+        <!-- Contenedor con carátula e ID configurados -->
+        <div class="artist-image-container">
+          <img id="imgTrack" src="http://imgfz.com/i/zEN859j.jpeg" alt="Artista">
+        </div>
+
+        <div class="num">10</div>
+        <canvas id="viz" width="238" height="80"></canvas>
+        
+        <!-- Título y artista vinculados con metadatos -->
+        <div class="marquee">
+          <span><strong id="artistName">Radio Melodías</strong> - <span id="songTitle">En Vivo</span></span>
+        </div>
+
+        <div class="social">
+          <a class="fb" href="#">f</a>
+          <a class="tw" href="#">t</a>
+          <a class="ml" href="#">&#9993;</a>
+        </div>
+        <div class="bottom">
+          <div class="btn pause" id="pp" title="Play / Pausa"><i></i><i></i></div>
+          <div class="btn stop" id="st" title="Stop"><i></i></div>
+          <div class="info">
+            <div>15:05: 56</div>
+            <div>DC:0</div>
+            <div class="r" style="top:0">BF:100%</div>
+            <div class="r" style="top:11px">USR:</div>
+          </div>
+          <div class="time" id="time">00:00:00</div>
+          <div class="knob" id="knob"></div>
+          <div class="vol" id="vol">0.8</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PARLANTE DERECHO -->
+    <div class="speaker" id="speakerRight">
+      <div class="tweeter"></div>
+      <div class="woofer"></div>
+    </div>
+
+  </div>
+
+  <script>
+    var lastTrack = "";
+
+    // Función para actualizar metadatos y carátula
+    function updateMetadata() {
+      $.getJSON('https://radioplayer.webradiodesign.it/libreriaplayer/nowplaying.php?host=149.56.175.167&port=7986&mount=1&strm=shoutcast2', function(data) {
+        if (!data) return;
+        const artist = data[0].trim();
+        const song = data[1].trim();
+        const full = artist + " - " + song;
+
+        if (full !== lastTrack) {
+          lastTrack = full;
+          $('#artistName').text(artist);
+          $('#songTitle').text(song);
+
+          let query = artist + " " + song;
+          $.ajax({
+            url: "https://itunes.apple.com/search?term=" + encodeURIComponent(query) + "&media=music&limit=1",
+            dataType: "jsonp",
+            success: function(res) {
+              if (res.results.length > 0 && res.results[0].artworkUrl100) {
+                let highResImg = res.results[0].artworkUrl100.replace('100x100bb', '600x600bb');
+                $('#imgTrack').fadeOut(400, function() {
+                  $(this).attr('src', highResImg).fadeIn(400);
+                });
+              } else {
+                $.ajax({
+                  url: "https://itunes.apple.com/search?term=" + encodeURIComponent(artist) + "&media=music&limit=1",
+                  dataType: "jsonp",
+                  success: function(resArtist) {
+                    if (resArtist.results.length > 0 && resArtist.results[0].artworkUrl100) {
+                      let highResImg = resArtist.results[0].artworkUrl100.replace('100x100bb', '600x600bb');
+                      $('#imgTrack').fadeOut(400, function() {
+                        $(this).attr('src', highResImg).fadeIn(400);
+                      });
+                    }
+                  }
+                });
+              }
+            }
+          });
+        }
+      });
+    }
+
+    $(document).ready(function() {
+      updateMetadata();
+      setInterval(updateMetadata, 10000);
+    });
+
+    // Control de audio real y visualizador Canvas + Animación de Parlantes
+    (function(){
+      var audio = document.getElementById('audioRadio');
+      var cv = document.getElementById('viz'), c = cv.getContext('2d');
+      var N = 34, bw = 6, gap = 1, H = 80, levels = [], peaks = [], playing = false, t = 0;
+      
+      var spkLeft = document.getElementById('speakerLeft');
+      var spkRight = document.getElementById('speakerRight');
+      var woofers = document.querySelectorAll('.speaker .woofer');
+      var tweeters = document.querySelectorAll('.speaker .tweeter');
+
+      for(var i = 0; i < N; i++){ levels.push(0); peaks.push(0); }
+
+      function draw(){
+        c.clearRect(0, 0, cv.width, H);
+        c.fillStyle = 'rgba(26, 0, 4, 0.88)';
+        c.fillRect(0, 0, cv.width, H);
+        t += .08;
+
+        var totalBass = 0;
+
+        for(var i = 0; i < N; i++){
+          var env = Math.exp(-Math.pow((i - N/2) / (N/3), 2));
+          var target = playing ? (env * (.45 + .45 * Math.random()) + .05 * Math.sin(t + i)) * H * .8 : 0;
+          levels[i] += (target - levels[i]) * .35;
+          if(levels[i] > peaks[i]) peaks[i] = levels[i]; else peaks[i] = Math.max(0, peaks[i] - .6);
+          
+          if(i < 8) {
+            totalBass += levels[i]; // Promedio de frecuencias graves para rebotar los parlantes
+          }
+
+          var x = i * (bw + gap) + 2, rows = Math.floor(levels[i] / 4);
+          for(var r = 0; r < rows; r++){
+            var y = H - 4 - r * 4, p = r / 20;
+            c.fillStyle = p < .5 ? '#ffffff' : p < .8 ? '#ff4d66' : '#ff002b';
+            c.fillRect(x, y, bw, 3);
+          }
+          c.fillStyle = '#ffffff';
+          c.fillRect(x, H - 6 - peaks[i], bw, 2);
+        }
+
+        // ANIMACIÓN DE LOS PARLANTES SEGÚN LA MÚSICA
+        if(playing) {
+          var bassIntensity = (totalBass / 8) / 40; // Nivel de rebote
+          var scaleWoofer = 1 + (bassIntensity * 0.25);
+          var scaleTweeter = 1 + (bassIntensity * 0.15);
+          
+          woofers.forEach(function(w){
+            w.style.transform = 'scale(' + scaleWoofer + ')';
+          });
+          tweeters.forEach(function(tw){
+            tw.style.transform = 'scale(' + scaleTweeter + ')';
+          });
+
+          if(bassIntensity > 0.45) {
+            spkLeft.classList.add('beat');
+            spkRight.classList.add('beat');
+          } else {
+            spkLeft.classList.remove('beat');
+            spkRight.classList.remove('beat');
+          }
+        } else {
+          woofers.forEach(function(w){ w.style.transform = 'scale(1)'; });
+          tweeters.forEach(function(tw){ tw.style.transform = 'scale(1)'; });
+          spkLeft.classList.remove('beat');
+          spkRight.classList.remove('beat');
+        }
+
+        c.beginPath();
+        c.strokeStyle = '#ffffff';
+        c.lineWidth = 1.5;
+        for(var x = 0; x < cv.width; x += 3){
+          var e = Math.exp(-Math.pow((x - cv.width * .5) / (cv.width * .3), 2));
+          var y = 18 + (playing ? Math.sin(x * .5 + t * 3) * Math.random() * 14 * e + Math.sin(x * .12 + t) * 4 : 0);
+          x ? c.lineTo(x, y) : c.moveTo(x, y);
+        }
+        c.stroke();
+        requestAnimationFrame(draw);
+      }
+      draw();
+
+      // Temporizador
+      var sec = 0, tm = document.getElementById('time');
+      function fmt(n){ return n < 10 ? '0' + n : n; }
+      function showTime(){ tm.textContent = fmt(Math.floor(sec / 3600)) + ':' + fmt(Math.floor(sec / 60) % 60) + ':' + fmt(sec % 60); }
+      setInterval(function(){ if(playing){ sec++; showTime(); } }, 1000);
+
+      // Botón Play / Pausa
+      document.getElementById('pp').onclick = function(){
+        if (audio.paused) {
+          audio.play().then(function() {
+            playing = true;
+          }).catch(function(e) {
+            console.log("Error al reproducir audio:", e);
+          });
+        } else {
+          audio.pause();
+          playing = false;
+        }
+      };
+
+      // Botón Stop
+      document.getElementById('st').onclick = function(){
+        audio.pause();
+        audio.currentTime = 0;
+        playing = false;
+        sec = 0;
+        showTime();
+      };
+
+      // Control de volumen
+      var vol = .8, knob = document.getElementById('knob'), vl = document.getElementById('vol');
+      function setVol(v){
+        vol = Math.max(0, Math.min(1, v));
+        audio.volume = vol;
+        knob.style.setProperty('--r', (vol * 270 - 135 + 180) + 'deg');
+        vl.textContent = vol.toFixed(1);
+      }
+      setVol(.8);
+      knob.addEventListener('wheel', function(e){
+        e.preventDefault();
+        setVol(vol + (e.deltaY < 0 ? .1 : -.1));
+      });
+      knob.onclick = function(){ setVol(vol >= 1 ? 0 : vol + .1); };
+    })();
+  </script>
+</body>
+</html>

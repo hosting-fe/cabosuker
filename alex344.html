@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reproductor HD Esmeralda Brillante - DonReseller</title>
+  <!-- jQuery necesario para la llamada $.getJSON / $.ajax -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background: radial-gradient(circle at 50% 40%, #002d1d, #000a06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    .player-container {
+      position: relative;
+    }
+    .player {
+      position: relative;
+      width: 374px;
+      height: 246px;
+      border-radius: 14px;
+      overflow: hidden;
+      color: #fff;
+      /* EFECTO PETATEADO / TRAMA CRUZADA BRILLANTE (Esmeralda) */
+      background: 
+        radial-gradient(ellipse at 50% 0%, rgba(180, 255, 220, 0.9) 0%, rgba(255, 255, 255, 0) 60%),
+        radial-gradient(ellipse at 50% 100%, rgba(100, 255, 200, 0.5) 0%, rgba(255, 255, 255, 0) 50%),
+        linear-gradient(45deg, rgba(200, 255, 230, 0.4) 25%, transparent 25%, transparent 75%, rgba(200, 255, 230, 0.4) 75%),
+        linear-gradient(-45deg, rgba(200, 255, 230, 0.4) 25%, transparent 25%, transparent 75%, rgba(200, 255, 230, 0.4) 75%),
+        repeating-linear-gradient(0deg, rgba(0, 200, 100, 0.3) 0 2px, rgba(180, 255, 220, 0.3) 2px 4px),
+        linear-gradient(135deg, #00c853 0%, #009624 35%, #004d2c 65%, #00e676 100%);
+      background-size: 100% 100%, 100% 100%, 8px 8px, 8px 8px, 100% 100%, 100% 100%;
+      border: 3px solid transparent;
+      background-clip: padding-box;
+      box-shadow: 
+        0 0 12px rgba(180, 255, 220, 0.8), 
+        0 0 20px rgba(0, 200, 100, 0.6), 
+        0 0 0 3px #ffffff, 
+        0 0 0 5px #00c853, 
+        0 0 0 7px #002d1d, 
+        0 12px 30px rgba(0, 0, 0, 0.9), 
+        inset 0 2px 4px rgba(180, 255, 220, 0.9);
+    }
+    .topbar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 29px;
+      z-index: 1;
+      background: linear-gradient(#ffffff 0%, #b3ffe0 40%, #00e676 55%, #ffffff 100%);
+      border-bottom: 1px solid #004d2c;
+      box-shadow: inset 0 1px 0 #fff;
+    }
+    .swoosh {
+      position: absolute;
+      left: 44px;
+      top: 0;
+      width: 150px;
+      height: 56px;
+      z-index: 1;
+      border-radius: 0 0 75px 75px / 0 0 56px 56px;
+      background: 
+        radial-gradient(circle at 50% 100%, rgba(180, 255, 220, 0.6), transparent 70%),
+        linear-gradient(180deg, #00c853 0%, #00803c 40%, #004d2c 75%, #000000 100%);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8), inset 0 2px 2px rgba(180, 255, 220, 0.8);
+    }
+    .top {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 56px;
+      z-index: 2;
+    }
+    .menu {
+      position: absolute;
+      left: 8px;
+      top: 3px;
+      width: 23px;
+      height: 23px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      padding: 3px;
+      border-radius: 4px;
+      background: linear-gradient(#ffffff, #b3ffe0);
+      border: 1px solid #004d2c;
+      box-shadow: 0 0 5px rgba(180, 255, 220, 0.8), inset 0 1px 0 #fff;
+    }
+    .menu i {
+      background: #004d2c;
+      border-radius: 50%;
+    }
+    .hd {
+      position: absolute;
+      left: 79px;
+      top: 19px;
+      width: 66px;
+      height: 27px;
+      border-radius: 50%;
+      background: linear-gradient(#ffffff 0%, #b3ffe0 48%, #00e676 52%, #ffffff 100%);
+      box-shadow: 0 0 8px rgba(180, 255, 220, 0.9), 0 2px 4px rgba(0,0,0,0.8), inset 0 0 0 1px #004d2c;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font: italic 900 21px Arial Black, Arial;
+      color: #004d2c;
+      letter-spacing: -1px;
+      text-shadow: 0 1px 0 #fff;
+    }
+    .site {
+      position: absolute;
+      right: 10px;
+      top: 6px;
+      font-size: 12.5px;
+      font-weight: bold;
+      color: #002d1d;
+      text-shadow: 0 1px 1px rgba(180, 255, 220, 0.9);
+    }
+    .live {
+      position: absolute;
+      right: 14px;
+      top: 38px;
+      font-size: 12px;
+      font-weight: bold;
+      z-index: 2;
+      color: #ffffff;
+      text-shadow: 0 0 6px #00e676, 0 0 10px #ffffff, 0 1px 2px #000;
+    }
+    .artist-image-container {
+      position: absolute;
+      left: 17px;
+      top: 73px;
+      width: 74px;
+      height: 76px;
+      z-index: 2;
+      border: 2px solid #ffffff;
+      outline: 1px solid #00c853;
+      box-shadow: 0 0 8px rgba(180, 255, 220, 0.7), 0 2px 4px rgba(0,0,0,0.8);
+      overflow: hidden;
+      background: #000;
+    }
+    .artist-image-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .num {
+      position: absolute;
+      left: 100px;
+      top: 76px;
+      font: italic 13px Arial;
+      z-index: 2;
+      color: #ffffff;
+      text-shadow: 0 0 4px #00e676, 0 1px 2px #000;
+    }
+    canvas {
+      position: absolute;
+      left: 100px;
+      top: 68px;
+      z-index: 1;
+      border-radius: 3px;
+      box-shadow: inset 0 0 0 1px #00c853, 0 0 6px rgba(180, 255, 220, 0.5);
+    }
+    .marquee {
+      position: absolute;
+      left: 20px;
+      right: 34px;
+      top: 150px;
+      height: 16px;
+      overflow: hidden;
+      z-index: 2;
+      font: 13px "Courier New", monospace;
+      letter-spacing: 1px;
+      white-space: nowrap;
+      color: #ffffff;
+      text-shadow: 0 0 6px #00e676, 0 1px 2px #000;
+    }
+    .marquee span {
+      display: inline-block;
+      padding-left: 100%;
+      animation: mq 12s linear infinite;
+    }
+    @keyframes mq {
+      to { transform: translateX(-100%); }
+    }
+    .social {
+      position: absolute;
+      right: 0;
+      top: 73px;
+      width: 20px;
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .social a {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 3px 0 0 3px;
+      color: #004d2c;
+      font: bold 12px Arial;
+      text-decoration: none;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 2px #000;
+    }
+    .fb { background: linear-gradient(#ffffff, #b3ffe0); }
+    .tw { background: linear-gradient(#ffffff, #80ffc4); }
+    .ml { background: linear-gradient(#ffffff, #00e676); }
+    .bottom {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 70px;
+      z-index: 2;
+      background: 
+        repeating-linear-gradient(90deg, rgba(200, 255, 230, 0.3) 0 1px, rgba(0, 0, 0, 0.1) 1px 2px), 
+        linear-gradient(#ffffff 0%, #b3ffe0 48%, #00e676 52%, #ffffff 100%);
+      border-radius: 60px 60px 0 0 / 22px 22px 0 0;
+      box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.6), inset 0 2px 1px #fff;
+    }
+    .btn {
+      position: absolute;
+      top: 30px;
+      width: 28px;
+      height: 22px;
+      border-radius: 5px;
+      border: 1px solid #006631;
+      background: linear-gradient(#ffffff 0%, #b3ffe0 48%, #00e676 52%, #ffffff 100%);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      box-shadow: 0 0 4px rgba(180, 255, 220, 0.8), 0 1px 2px rgba(0,0,0,0.5), inset 0 1px 0 #fff;
+    }
+    .btn:active {
+      transform: translateY(1px);
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.6);
+    }
+    .btn.pause { left: 25px; }
+    .btn.stop { left: 60px; }
+    .pause i {
+      width: 3px;
+      height: 10px;
+      background: #002d1d;
+    }
+    .stop i {
+      width: 10px;
+      height: 10px;
+      background: #002d1d;
+    }
+    .info {
+      position: absolute;
+      left: 115px;
+      top: 9px;
+      font-size: 9px;
+      line-height: 11px;
+      color: #002d1d;
+      font-weight: bold;
+    }
+    .info .r {
+      position: absolute;
+      left: 62px;
+      white-space: nowrap;
+    }
+    .time {
+      position: absolute;
+      left: 100px;
+      top: 46px;
+      font-size: 11px;
+      font-weight: bold;
+      color: #002d1d;
+      text-shadow: 0 1px 0 rgba(180, 255, 220, 0.9);
+    }
+    .knob {
+      position: absolute;
+      right: 30px;
+      top: 8px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      cursor: pointer;
+      background: conic-gradient(from 0deg, #ffffff, #00e676, #ffffff, #00803c, #ffffff, #00e676, #ffffff, #00803c, #ffffff);
+      border: 2px solid #004d2c;
+      box-shadow: 0 0 8px rgba(180, 255, 220, 0.6), 0 3px 6px rgba(0,0,0,0.6), inset 0 0 0 4px rgba(255,255,255,0.3);
+    }
+    .knob:after {
+      content: "";
+      position: absolute;
+      inset: 9px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 40% 30%, #00e676, #002d1d);
+      box-shadow: inset 0 1px 2px rgba(180, 255, 220, 0.8);
+    }
+    .knob:before {
+      content: "";
+      position: absolute;
+      left: calc(50% - 1.5px);
+      top: 50%;
+      width: 3px;
+      height: 17px;
+      background: #ffffff;
+      box-shadow: 0 0 5px #ffffff;
+      border-radius: 2px;
+      z-index: 2;
+      transform-origin: 50% 0;
+      transform: rotate(var(--r, 200deg));
+    }
+    .vol {
+      position: absolute;
+      right: 12px;
+      top: 48px;
+      font-size: 10px;
+      color: #002d1d;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="player-container">
+    <!-- Etiqueta de audio configurada (usa una URL de stream de ejemplo) -->
+    <audio id="audioRadio" crossorigin="anonymous">
+      <source src="https://stream.zeno.fm/f5984605987uv" type="audio/mpeg">
+    </audio>
+
+    <div class="player">
+      <div class="topbar"></div>
+      <div class="swoosh"></div>
+      <div class="top">
+        <div class="menu"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="hd">HD</div>
+        <div class="site">WWW.DONRESELLER.COM</div>
+      </div>
+      <div class="live">LIVE</div>
+      
+      <!-- Contenedor con carátula e ID configurados -->
+      <div class="artist-image-container">
+        <img id="imgTrack" src="http://imgfz.com/i/zEN859j.jpeg" alt="Artista">
+      </div>
+
+      <div class="num">10</div>
+      <canvas id="viz" width="238" height="80"></canvas>
+      
+      <!-- Título y artista vinculados con metadatos (ejemplo) -->
+      <div class="marquee">
+        <span><strong id="artistName">Nombre del Artista</strong> - <span id="songTitle">Título de la Canción</span></span>
+      </div>
+
+      <div class="social">
+        <a class="fb" href="#">f</a>
+        <a class="tw" href="#">t</a>
+        <a class="ml" href="#">&#9993;</a>
+      </div>
+      <div class="bottom">
+        <div class="btn pause" id="pp" title="Play / Pausa"><i></i><i></i></div>
+        <div class="btn stop" id="st" title="Stop"><i></i></div>
+        <div class="info">
+          <div>15:05: 56</div>
+          <div>DC:0</div>
+          <div class="r" style="top:0">BF:100%</div>
+          <div class="r" style="top:11px">USR:</div>
+        </div>
+        <div class="time" id="time">00:00:00</div>
+        <div class="knob" id="knob"></div>
+        <div class="vol" id="vol">0.8</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Este script de ejemplo simula metadatos. Necesitarás adaptarlo a tu fuente real.
+    $(document).ready(function() {
+      // Simulación: Actualiza el artista y título cada 10 segundos
+      setInterval(function() {
+        const artists = ["Artista Ejemplo", "Grupo Sonoro", "Voz Melódica"];
+        const songs = ["Canción Brillante", "Ritmo Esmeralda", "Melodía HD"];
+        
+        const randomArtist = artists[Math.floor(Math.random() * artists.length)];
+        const randomSong = songs[Math.floor(Math.random() * songs.length)];
+        
+        $('#artistName').text(randomArtist);
+        $('#songTitle').text(randomSong);
+        
+        // Simulación: Alterna la carátula (puedes usar URLs reales)
+        if ($('#imgTrack').attr('src').includes('zEN859j')) {
+           $('#imgTrack').fadeOut(400, function() {
+              $(this).attr('src', 'http://imgfz.com/i/zEN859j.jpeg').fadeIn(400); // Reemplaza con otra URL
+           });
+        } else {
+           $('#imgTrack').fadeOut(400, function() {
+              $(this).attr('src', 'http://imgfz.com/i/zEN859j.jpeg').fadeIn(400);
+           });
+        }
+        
+      }, 10000);
+    });
+
+    // Control de audio real y visualizador Canvas (adaptado)
+    (function(){
+      var audio = document.getElementById('audioRadio');
+      var cv = document.getElementById('viz'), c = cv.getContext('2d');
+      var N = 34, bw = 6, gap = 1, H = 80, levels = [], peaks = [], playing = false, t = 0;
+      for(var i = 0; i < N; i++){ levels.push(0); peaks.push(0); }
+
+      function draw(){
+        c.clearRect(0, 0, cv.width, H);
+        c.fillStyle = 'rgba(0, 26, 12, 0.88)'; // Fondo del visualizador más oscuro
+        c.fillRect(0, 0, cv.width, H);
+        t += .08;
+
+        for(var i = 0; i < N; i++){
+          var env = Math.exp(-Math.pow((i - N/2) / (N/3), 2));
+          var target = playing ? (env * (.45 + .45 * Math.random()) + .05 * Math.sin(t + i)) * H * .8 : 0;
+          levels[i] += (target - levels[i]) * .35;
+          if(levels[i] > peaks[i]) peaks[i] = levels[i]; else peaks[i] = Math.max(0, peaks[i] - .6);
+          
+          var x = i * (bw + gap) + 2, rows = Math.floor(levels[i] / 4);
+          for(var r = 0; r < rows; r++){
+            var y = H - 4 - r * 4, p = r / 20;
+            // Colores del visualizador: Blanco -> Verde Claro -> Esmeralda
+            c.fillStyle = p < .5 ? '#ffffff' : p < .8 ? '#b3ffe0' : '#00e676';
+            c.fillRect(x, y, bw, 3);
+          }
+          c.fillStyle = '#ffffff';
+          c.fillRect(x, H - 6 - peaks[i], bw, 2);
+        }
+
+        c.beginPath();
+        c.strokeStyle = '#ffffff';
+        c.lineWidth = 1.5;
+        for(var x = 0; x < cv.width; x += 3){
+          var e = Math.exp(-Math.pow((x - cv.width * .5) / (cv.width * .3), 2));
+          var y = 18 + (playing ? Math.sin(x * .5 + t * 3) * Math.random() * 14 * e + Math.sin(x * .12 + t) * 4 : 0);
+          x ? c.lineTo(x, y) : c.moveTo(x, y);
+        }
+        c.stroke();
+        requestAnimationFrame(draw);
+      }
+      draw();
+
+      // Temporizador (simulado)
+      var sec = 0, tm = document.getElementById('time');
+      function fmt(n){ return n < 10 ? '0' + n : n; }
+      function showTime(){ tm.textContent = fmt(Math.floor(sec / 3600)) + ':' + fmt(Math.floor(sec / 60) % 60) + ':' + fmt(sec % 60); }
+      setInterval(function(){ if(playing){ sec++; showTime(); } }, 1000);
+
+      // Botón Play / Pausa (con fuente de stream real)
+      document.getElementById('pp').onclick = function(){
+        if (audio.paused) {
+          audio.play();
+          playing = true;
+        } else {
+          audio.pause();
+          playing = false;
+        }
+      };
+
+      // Botón Stop
+      document.getElementById('st').onclick = function(){
+        audio.pause();
+        audio.currentTime = 0; // O recarga el stream para simular stop
+        playing = false;
+        sec = 0;
+        showTime();
+      };
+
+      // Control de volumen
+      var vol = .8, knob = document.getElementById('knob'), vl = document.getElementById('vol');
+      function setVol(v){
+        vol = Math.max(0, Math.min(1, v));
+        audio.volume = vol;
+        knob.style.setProperty('--r', (vol * 270 - 135 + 180) + 'deg');
+        vl.textContent = vol.toFixed(1);
+      }
+      setVol(.8);
+      knob.addEventListener('wheel', function(e){
+        e.preventDefault();
+        setVol(vol + (e.deltaY < 0 ? .1 : -.1));
+      });
+      knob.onclick = function(){ setVol(vol >= 1 ? 0 : vol + .1); };
+    })();
+  </script>
+</body>
+</html>
